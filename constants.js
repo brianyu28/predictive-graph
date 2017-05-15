@@ -4,6 +4,13 @@ var graphHeight = 550;
 var padding = 10;
 var headlineSize = 32;
 
+// locations for inner graph
+// inner graph is everything within axes
+var innerGraphX = 0.05 * graphWidth;
+var innerGraphY = 0;
+var innerGraphWidth = 0.9 * graphWidth;
+var innerGraphHeight = 0.95 * graphHeight;
+
 var crimson = '#a82931';
 var blue1 = '#004e6a';
 var blue2 = '#7799b7';
