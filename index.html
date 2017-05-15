@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Predictive Graph</title>
-        <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-        <script src="processing.min.js"></script>
+        <link href="https://fonts.googleapis.com/css?family=Merriweather" rel="stylesheet">
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script src="config.js"></script>
+        <script src="constants.js"></script>
+        <script src="helpers.js"></script>
+        <script src="predictive.js"></script>
     </head>
-    <body style="margin-left:0;margin-top:0;">
-        <canvas data-processing-sources="constants.pde config.pde helpers.pde predictive.pde"></canvas>
+    <body>
+        <div id="predictive-graph">
+        </div>
     </body>
 </html>
