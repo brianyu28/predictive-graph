@@ -1,8 +1,10 @@
 var mouseIsDown = false;
 window.onload = function() {
     
-    document.body.onmousedown = function() { mouseIsDown = true };
-    document.body.onmouseup = function() { mouseIsDown = false };
+    document.body.onmousedown = function() { mouseIsDown = true; };
+    document.body.onmouseup = function() { mouseIsDown = false; };
+    document.body.addEventListener('touchstart', function(e) { mouseIsDown = true; });
+    document.body.addEventListener('touchend', function(e) { mouseIsDown = false; });
 
     // load data
     d3.queue()
@@ -112,6 +114,8 @@ function render(error, data) {
 
     svg.on('mousemove', mousemove)
         .on('mouseup', mouseup)
+        .on('touchmove', touchmove)
+        .on('touchup', mouseup)
 }
 
 var drawnLines = [];
@@ -122,6 +126,20 @@ var lastReachedX;
 var lastReachedY;
 
 function mousemove() {
+    svg = d3.select(this);
+    x = d3.mouse(svg.node())[0];
+    y = d3.mouse(svg.node())[1];
+    move(x, y);
+}
+
+function touchmove() {
+    svg = d3.select(this);
+    x = d3.touches(svg.node())[0][0];
+    y = d3.touches(svg.node())[0][1];
+    move(x, y);
+}
+
+function move(mouseX, mouseY) {
 
     // if done guessing, then don't change the drawing
     if (doneGuessing) {
@@ -131,11 +149,6 @@ function mousemove() {
         return;
     }
 
-    // determine current position
-    svg = d3.select(this);
-    mouseX = d3.mouse(svg.node())[0];
-    mouseY = d3.mouse(svg.node())[1];
-    
     // update lastReachedX and Y if there's nothing drawn
     if (drawnLines.length === 0) {
         lastReachedX = lastVisibleX;
