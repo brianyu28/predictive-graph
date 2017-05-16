@@ -19,6 +19,9 @@ var showButtonText;
 
 var lastVisibleX;
 var lastVisibleY;
+var visibleSegments;
+var requiredGuessCount;
+var dataLen;
 
 function render(error, data) {
 
@@ -44,8 +47,11 @@ function render(error, data) {
     }
 
     // determine number of ticks
-    var ticks = Math.ceil(dataMax / tickInterval);
+    var ticks = Math.ceil(dataMax / tickInterval) + 2;
     yHeight = ticks * tickInterval;
+    visibleSegments = visible.length - 1;
+    requiredGuessCount = data.length - visibleSegments - 1;
+    dataLen = data.length;
 
     // define dimensions of graph
     var canvas = d3.select('div#predictive-graph');
@@ -58,6 +64,9 @@ function render(error, data) {
         .style('margin-right', px(padding));
     makeHeadline(headline);
     
+    // calculate space between points
+    separation = innerGraphWidth / (data.length - 1);
+
     // create main canvas
     var svg = canvas.append('svg')
         .style('width', px(graphWidth))
@@ -65,9 +74,8 @@ function render(error, data) {
         .style('margin-left', px(padding))
         .style('margin-right', px(padding));
     drawAxes(svg);
+    drawTicksX(svg);
     
-    // calculate space between points
-    separation = innerGraphWidth / (data.length - 1);
     plotVisiblePoints(svg, visible);
     lastVisibleX = coordinateOfX(separation * (visible.length - 1));
     lastVisibleY = coordinateOfY(visible[visible.length - 1]['y']);
@@ -98,36 +106,104 @@ function render(error, data) {
         .on('click', function() {
             plotHiddenPoints(svg, [visible[visible.length - 1]].concat(hidden), visible.length);
         });
-    
+
     svg.on('mousemove', mousemove)
+        .on('mouseup', mouseup)
 }
 
-var drawnPoints = [];
-var pointReached = 0;
+var drawnLines = [];
+var temporaryLine = null;
+var doneGuessing = false;
+
+var lastReachedX;
+var lastReachedY;
 
 function mousemove() {
-    if (!mouseIsDown) {
-        if (pointReached < innerGraphX + (0.9 * innerGraphWidth)) {
-            for (var i = 0; i < drawnPoints.length; i++) {
-                drawnPoints[i].remove();
-            }
-            drawnPoints = [];
-        }
+
+    // if done guessing, then don't change the drawing
+    if (doneGuessing) {
+        return;
+    } else if (!mouseIsDown) {
+        eraseLines(); 
         return;
     }
+
+    // determine current position
     svg = d3.select(this);
     mouseX = d3.mouse(svg.node())[0];
     mouseY = d3.mouse(svg.node())[1];
-    if (mouseX > pointReached)
-        pointReached = mouseX;
-
-    // once threshold point is reached, show the button
-    if (pointReached >= innerGraphX + (0.9 * innerGraphWidth)) {
-        showButton.style('visibility', 'visible');
-        showButtonText.style('visibility', 'visible');
+    
+    // update lastReachedX and Y if there's nothing drawn
+    if (drawnLines.length === 0) {
+        lastReachedX = lastVisibleX;
+        lastReachedY = lastVisibleY;
     }
-    point = drawPoint(svg, mouseX, mouseY, crimson, 0);
-    drawnPoints.push(point);
+
+    // don't allow traveling backwards
+    if (mouseX < lastReachedX)
+        mouseX = lastReachedX;
+    
+    // get rid of the previous temporary line if one is there
+    if (temporaryLine !== null) {
+        temporaryLine.remove();
+        temporaryLine = null;
+    }
+    
+    // if we've reached a new separator line, make the line official
+    if (mouseX >= lastReachedX + separation) {
+
+        // create the official line and add it to a drawn line
+        var newLine = svg.append('path')
+            .attr('d', line([
+                [lastReachedX, lastReachedY],
+                [lastReachedX + separation, mouseY]
+            ]))
+            .attr('stroke', crimson)
+            .attr('stroke-width', 4);
+        drawnLines.push(newLine);
+
+        // update our last reached positions
+        lastReachedX += separation;
+        lastReachedY = mouseY;
+        
+        // if we've drawn enough line segments, then done guessing
+        if (drawnLines.length >= requiredGuessCount) {
+            doneGuessing = true;
+            showButton.style('visibility', 'visible');
+            showButtonText.style('visibility', 'visible');
+        }
+    } else {
+
+        // if we haven't reached a new separator, draw a temporary line
+        temporaryLine = svg.append('path')
+            .attr('d', line([
+                [lastReachedX, lastReachedY],
+                [mouseX, mouseY]
+            ]))
+            .attr('stroke', crimson)
+            .attr('stroke-dasharray', '5 5')
+            .attr('stroke-width', 4);
+    }
+}
+
+function eraseLines() {
+    // if mouse isn't down, then erase any drawn lines
+    for (var i = 0; i < drawnLines.length; i++) {
+        drawnLines[i].remove();
+    }
+    drawnLines = [];
+
+    // need to erase the temporary line too
+    if (temporaryLine !== null) {
+        temporaryLine.remove();
+        temporaryLine = null;
+    }
+}
+
+function mouseup() {
+    if (!doneGuessing) {
+        eraseLines();
+    }
 }
 
 function makeHeadline(headline) {
@@ -144,7 +220,7 @@ function drawAxes(svg) {
                 [innerGraphX, innerGraphY + innerGraphHeight]
         ]))
         .attr('stroke', black)
-        .attr('stroke-width', 3);
+        .attr('stroke-width', 4);
 
     var yAxis = svg.append('path')
         .attr('d', line([
@@ -152,7 +228,20 @@ function drawAxes(svg) {
                 [innerGraphX + innerGraphWidth, innerGraphY + innerGraphHeight]
         ]))
         .attr('stroke', black)
-        .attr('stroke-width', 3);
+        .attr('stroke-width', 4);
+}
+
+function drawTicksX(svg) {
+    for (var i = 1; i < dataLen; i++) {
+        svg.append('path')
+            .attr('d', line([
+                [innerGraphX + separation * i, innerGraphY],
+                [innerGraphX + separation * i, innerGraphY + innerGraphHeight]
+            ]))
+            .attr('stroke', black)
+            .attr('stroke-width', 1)
+            .attr('stroke-dasharray', '1 1');
+    }
 }
 
 function plotVisiblePoints(svg, data) {
@@ -175,7 +264,7 @@ function plotVisiblePoints(svg, data) {
             .attr('d', dataLine(data.slice(i, i + 2)))
             .attr('fill', 'none')
             .attr('stroke', black)
-            .attr('stroke-width', 3);
+            .attr('stroke-width', 4);
 
         // animate drawing of visible line
         var visLineLength = visibleLine.node().getTotalLength();
@@ -223,7 +312,7 @@ function plotHiddenPoints(svg, data, pointsDone) {
             .attr('d', dataLine(data.slice(i, i + 2)))
             .attr('fill', 'none')
             .attr('stroke', green)
-            .attr('stroke-width', 3);
+            .attr('stroke-width', 4);
 
         // animate drawing of hidden line
         var hidLineLength = hiddenLine.node().getTotalLength();
