@@ -1,6 +1,4 @@
 // sizes
-var graphWidth = 580;
-var graphHeight = 550;
 var padding = 10;
 var headlineSize = 32;
 var buttonFontSize = 18;

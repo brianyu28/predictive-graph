@@ -304,7 +304,7 @@ function labelAxes(svg, data) {
 
     // label the y axis
     var yaxis = svg.append('text')
-        .attr('x', - innerGraphWidth / 2)
+        .attr('x', - innerGraphHeight / 2)
         .attr('y', padding)
         .attr('width', innerGraphWidth)
         .attr('height', padding)
