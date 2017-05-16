@@ -4,12 +4,13 @@ var graphHeight = 550;
 var padding = 10;
 var headlineSize = 32;
 var buttonFontSize = 18;
+var labelFontSize = 10;
 
 // locations for inner graph
 // inner graph is everything within axes
-var innerGraphX = 0.05 * graphWidth;
+var innerGraphX = 0.1 * graphWidth;
 var innerGraphY = 0;
-var innerGraphWidth = 0.9 * graphWidth;
+var innerGraphWidth = 0.85 * graphWidth;
 var innerGraphHeight = 0.95 * graphHeight;
 
 var buttonWidth = 140;
@@ -25,5 +26,7 @@ var white = '#ffffff';
 var black = '#000000';
 
 var showButtonColor = blue3;
+var guessColor = crimson;
+var correctColor = green;
 
 var mainFont = '"Merriweather", serif';

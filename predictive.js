@@ -12,6 +12,7 @@ window.onload = function() {
 
 var separation; // separation between points along x
 var yHeight; // max height of y axis
+var ticks;
 
 // elements
 var showButton;
@@ -23,10 +24,11 @@ var visibleSegments;
 var requiredGuessCount;
 var dataLen;
 
+var visible = [];
+var hidden = [];
+
 function render(error, data) {
 
-    var visible = [];
-    var hidden = [];
     var dataMax = null;
     for (var i = 0; i < data.length; i++) {
 
@@ -47,7 +49,7 @@ function render(error, data) {
     }
 
     // determine number of ticks
-    var ticks = Math.ceil(dataMax / tickInterval) + 2;
+    ticks = Math.ceil(dataMax / tickInterval) + 2;
     yHeight = ticks * tickInterval;
     visibleSegments = visible.length - 1;
     requiredGuessCount = data.length - visibleSegments - 1;
@@ -74,6 +76,7 @@ function render(error, data) {
         .style('margin-left', px(padding))
         .style('margin-right', px(padding));
     drawAxes(svg);
+    labelAxes(svg, data);
     drawTicksX(svg);
     
     plotVisiblePoints(svg, visible);
@@ -83,7 +86,7 @@ function render(error, data) {
     // add button to show results
     showButton = svg.append('rect')
         .attr('x', innerGraphX + innerGraphWidth - buttonWidth)
-        .attr('y', innerGraphY + innerGraphHeight + padding)
+        .attr('y', innerGraphY + innerGraphHeight + 2 * padding)
         .attr('width', buttonWidth)
         .attr('height', buttonHeight)
         .style('fill', showButtonColor)
@@ -94,7 +97,7 @@ function render(error, data) {
     
     showButtonText = svg.append('text')
         .attr('x', innerGraphX + innerGraphWidth - (buttonWidth / 2))
-        .attr('y', innerGraphY + innerGraphHeight + padding + (buttonWidth / 5))
+        .attr('y', innerGraphY + innerGraphHeight + 2 * padding + (buttonWidth / 5))
         .attr('width', buttonWidth)
         .attr('height', buttonHeight)
         .style('font-family', mainFont)
@@ -102,7 +105,7 @@ function render(error, data) {
         .style('color', black)
         .style('text-anchor', 'middle')
         .style('visibility', 'hidden')
-        .text(function() { return "Show Actual" })
+        .text(function() { return "Show Actual"; })
         .on('click', function() {
             plotHiddenPoints(svg, [visible[visible.length - 1]].concat(hidden), visible.length);
         });
@@ -158,7 +161,7 @@ function mousemove() {
                 [lastReachedX, lastReachedY],
                 [lastReachedX + separation, mouseY]
             ]))
-            .attr('stroke', crimson)
+            .attr('stroke', guessColor)
             .attr('stroke-width', 4);
         drawnLines.push(newLine);
 
@@ -169,8 +172,13 @@ function mousemove() {
         // if we've drawn enough line segments, then done guessing
         if (drawnLines.length >= requiredGuessCount) {
             doneGuessing = true;
-            showButton.style('visibility', 'visible');
-            showButtonText.style('visibility', 'visible');
+            
+            if (useButton) {
+                showButton.style('visibility', 'visible');
+                showButtonText.style('visibility', 'visible');
+            } else {
+                plotHiddenPoints(svg, [visible[visible.length - 1]].concat(hidden), visible.length);
+            }
         }
     } else {
 
@@ -180,7 +188,7 @@ function mousemove() {
                 [lastReachedX, lastReachedY],
                 [mouseX, mouseY]
             ]))
-            .attr('stroke', crimson)
+            .attr('stroke', guessColor)
             .attr('stroke-dasharray', '5 5')
             .attr('stroke-width', 4);
     }
@@ -244,6 +252,66 @@ function drawTicksX(svg) {
     }
 }
 
+function labelAxes(svg, data) {
+    
+    // label the x ticks
+    for (var i = 0; i < data.length; i++) {
+        var label = data[i]['x'];
+    
+        svg.append('text')
+            .attr('x', innerGraphX + i * separation)
+            .attr('y', innerGraphY + innerGraphHeight + padding)
+            .attr('width', separation)
+            .attr('height', padding)
+            .style('font-family', mainFont)
+            .style('font-size', labelFontSize)
+            .style('color', black)
+            .style('text-anchor', 'middle')
+            .text(function () { return label; });
+    }
+    
+    // label the y ticks
+    for (var i = 0; i < ticks; i++) {
+        var height = i * tickInterval;
+
+        svg.append('text')
+            .attr('x', innerGraphX - padding)
+            .attr('y', innerGraphY + innerGraphHeight - (height / yHeight) * innerGraphHeight)
+            .attr('width', separation) 
+            .attr('height', padding)
+            .style('font-family', mainFont)
+            .style('font-size', labelFontSize)
+            .style('color', black)
+            .style('text-anchor', 'end')
+            .text(function() { return height; });
+    }
+
+    // label the y axis
+    svg.append('text')
+        .attr('x', - innerGraphWidth / 2)
+        .attr('y', padding)
+        .attr('width', innerGraphWidth)
+        .attr('height', padding)
+        .attr('font-family', mainFont)
+        .attr('transform', 'rotate(-90)')
+        .style('font-size', labelFontSize)
+        .style('color', black)
+        .style('text-anchor', 'middle')
+        .text(function() { return yLabel; });
+
+    // label the x axis
+    svg.append('text')
+        .attr('x', innerGraphX + innerGraphWidth / 2)
+        .attr('y', innerGraphY + innerGraphHeight + 3 * padding)
+        .attr('width', innerGraphWidth)
+        .attr('height', padding)
+        .attr('font-family', mainFont)
+        .style('font-size', labelFontSize)
+        .style('color', black)
+        .style('text-anchor', 'middle')
+        .text(function() { return xLabel; });
+}
+
 function plotVisiblePoints(svg, data) {
     var j = 0; // number of line segments already drawn
     var xCoord = separation; // x location of next point
@@ -290,6 +358,9 @@ function plotVisiblePoints(svg, data) {
 }    
 
 function plotHiddenPoints(svg, data, pointsDone) {
+
+    showKey(svg);
+
     var j = pointsDone - 1; // total number of segments drawn
     var k = 0; // number of hidden segments drawn 
     var xCoord = separation * pointsDone;
@@ -334,6 +405,50 @@ function plotHiddenPoints(svg, data, pointsDone) {
                 green, 400 * (k+1));
         xCoord += separation;
     }
+}
+
+function showKey(svg) {
+
+    // red box
+    svg.append('rect')
+        .attr('x', innerGraphX)
+        .attr('y', innerGraphY + innerGraphHeight + 4 * padding)
+        .attr('width', padding)
+        .attr('height', padding)
+        .style('fill', guessColor);
+
+    // red box corresponds to your guess
+    svg.append('text')
+        .attr('x', innerGraphX + 2 * padding)
+        .attr('y', innerGraphY + innerGraphHeight + 5 * padding)
+        .attr('width', 0.15 * innerGraphWidth)
+        .attr('height', padding)
+        .style('font-family', mainFont)
+        .style('font-size', labelFontSize)
+        .style('color', black)
+        .style('text-anchor', 'start')
+        .text(function() { return "Your Guess"; });
+    
+    // green box
+    svg.append('rect')
+        .attr('x', innerGraphX + 4 * padding + 0.15 * innerGraphWidth)
+        .attr('y', innerGraphY + innerGraphHeight + 4 * padding)
+        .attr('width', padding)
+        .attr('height', padding)
+        .style('fill', correctColor); 
+
+    // green box corresponds to actual
+    svg.append('text')
+        .attr('x', innerGraphX + 6 * padding + 0.15 * innerGraphWidth)
+        .attr('y', innerGraphY + innerGraphHeight + 5 * padding)
+        .attr('width', 0.15 * innerGraphWidth)
+        .attr('height', padding)
+        .style('font-family', mainFont)
+        .style('font-size', labelFontSize)
+        .style('color', black)
+        .style('text-anchor', 'start')
+        .text(function() { return "Actual Data"; });
+        
 }
 
 // determines the X coordinate of a particular x data value
