@@ -1,4 +1,8 @@
+var mouseIsDown = false;
 window.onload = function() {
+    
+    document.body.onmousedown = function() { mouseIsDown = true };
+    document.body.onmouseup = function() { mouseIsDown = false };
 
     // load data
     d3.queue()
@@ -8,6 +12,13 @@ window.onload = function() {
 
 var separation; // separation between points along x
 var yHeight; // max height of y axis
+
+// elements
+var showButton;
+var showButtonText;
+
+var lastVisibleX;
+var lastVisibleY;
 
 function render(error, data) {
 
@@ -50,7 +61,7 @@ function render(error, data) {
     // create main canvas
     var svg = canvas.append('svg')
         .style('width', px(graphWidth))
-        .style('height', px(graphHeight))
+        .style('height', px(graphHeight + padding + buttonHeight))
         .style('margin-left', px(padding))
         .style('margin-right', px(padding));
     drawAxes(svg);
@@ -58,6 +69,65 @@ function render(error, data) {
     // calculate space between points
     separation = innerGraphWidth / (data.length - 1);
     plotVisiblePoints(svg, visible);
+    lastVisibleX = coordinateOfX(separation * (visible.length - 1));
+    lastVisibleY = coordinateOfY(visible[visible.length - 1]['y']);
+
+    // add button to show results
+    showButton = svg.append('rect')
+        .attr('x', innerGraphX + innerGraphWidth - buttonWidth)
+        .attr('y', innerGraphY + innerGraphHeight + padding)
+        .attr('width', buttonWidth)
+        .attr('height', buttonHeight)
+        .style('fill', showButtonColor)
+        .style('visibility', 'hidden')
+        .on('click', function() {
+            plotHiddenPoints(svg, [visible[visible.length - 1]].concat(hidden), visible.length);
+        });
+    
+    showButtonText = svg.append('text')
+        .attr('x', innerGraphX + innerGraphWidth - (buttonWidth / 2))
+        .attr('y', innerGraphY + innerGraphHeight + padding + (buttonWidth / 5))
+        .attr('width', buttonWidth)
+        .attr('height', buttonHeight)
+        .style('font-family', mainFont)
+        .style('font-size', buttonFontSize)
+        .style('color', black)
+        .style('text-anchor', 'middle')
+        .style('visibility', 'hidden')
+        .text(function() { return "Show Actual" })
+        .on('click', function() {
+            plotHiddenPoints(svg, [visible[visible.length - 1]].concat(hidden), visible.length);
+        });
+    
+    svg.on('mousemove', mousemove)
+}
+
+var drawnPoints = [];
+var pointReached = 0;
+
+function mousemove() {
+    if (!mouseIsDown) {
+        if (pointReached < innerGraphX + (0.9 * innerGraphWidth)) {
+            for (var i = 0; i < drawnPoints.length; i++) {
+                drawnPoints[i].remove();
+            }
+            drawnPoints = [];
+        }
+        return;
+    }
+    svg = d3.select(this);
+    mouseX = d3.mouse(svg.node())[0];
+    mouseY = d3.mouse(svg.node())[1];
+    if (mouseX > pointReached)
+        pointReached = mouseX;
+
+    // once threshold point is reached, show the button
+    if (pointReached >= innerGraphX + (0.9 * innerGraphWidth)) {
+        showButton.style('visibility', 'visible');
+        showButtonText.style('visibility', 'visible');
+    }
+    point = drawPoint(svg, mouseX, mouseY, crimson, 0);
+    drawnPoints.push(point);
 }
 
 function makeHeadline(headline) {
@@ -85,49 +155,123 @@ function drawAxes(svg) {
         .attr('stroke-width', 3);
 }
 
-function plotVisiblePoints(svg, visible) {
-   var dataLine = d3.line()
+function plotVisiblePoints(svg, data) {
+    var j = 0; // number of line segments already drawn
+    var xCoord = separation; // x location of next point
+
+    // draw initial point
+    drawPoint(svg, coordinateOfX(0), coordinateOfY(data[0]['y']), black, 0);
+
+    var dataLine = d3.line()
         .x(function(d, i) {
-            return innerGraphX + i * separation
+            return coordinateOfX((i + j) * separation);
         })
         .y(function(d) {
-            return innerGraphY + innerGraphHeight - yDistance(d['y'], yHeight, innerGraphHeight)
+            return coordinateOfY(d['y']);
         });
 
-    var visibleLine = svg.append('path')
-        .attr('d', dataLine(visible))
-        .attr('fill', 'none')
-        .attr('stroke', black)
-        .attr('stroke-width', 3);
+    for (var i = 0; i < data.length - 1; i++) {
+        var visibleLine = svg.append('path')
+            .attr('d', dataLine(data.slice(i, i + 2)))
+            .attr('fill', 'none')
+            .attr('stroke', black)
+            .attr('stroke-width', 3);
 
-    // animate drawing of visible line
-    var visLineLength = visibleLine.node().getTotalLength();
-    visibleLine
-        .attr('stroke-dasharray', visLineLength + ' ' + visLineLength)
-        .attr('stroke-dashoffset', visLineLength)
-        .transition()
-        .duration(1000)
-        .delay(400)
-        .ease(d3.easeLinear)
-        .attr('stroke-dashoffset', 0);
+        // animate drawing of visible line
+        var visLineLength = visibleLine.node().getTotalLength();
+        visibleLine
+            .attr('stroke-dasharray', visLineLength + ' ' + visLineLength)
+            .attr('stroke-dashoffset', visLineLength)
+            .transition()
+            .duration(400)
+            .delay(400 * j + 400)
+            .ease(d3.easeLinear)
+            .attr('stroke-dashoffset', 0);
 
-    var xCoord = 0;
-    for (var i = 0; i < visible.length; i++) {
-        var ydist = yDistance(visible[i]['y'], yHeight, innerGraphHeight);
+        j++;
+
         drawPoint(svg,
-                innerGraphX + xCoord,
-                innerGraphY + innerGraphHeight - ydist,
-                black);
+                coordinateOfX(xCoord),
+                coordinateOfY(data[i+1]['y']),
+                black, 400 * (j+1));
+        xCoord += separation;
+
+    }
+
+}    
+
+function plotHiddenPoints(svg, data, pointsDone) {
+    var j = pointsDone - 1; // total number of segments drawn
+    var k = 0; // number of hidden segments drawn 
+    var xCoord = separation * pointsDone;
+    
+    // draw the initial point
+    drawPoint(svg,
+            coordinateOfX(xCoord - separation),
+            coordinateOfY(data[0]['y']), green, 0);
+
+    var dataLine = d3.line()
+        .x(function(d, i) {
+            return coordinateOfX((i + j) * separation);
+        })
+        .y(function(d) {
+            return coordinateOfY(d['y']);
+        });
+
+    for (var i = 0; i < data.length - 1; i++) {
+        var hiddenLine = svg.append('path')
+            .attr('d', dataLine(data.slice(i, i + 2)))
+            .attr('fill', 'none')
+            .attr('stroke', green)
+            .attr('stroke-width', 3);
+
+        // animate drawing of hidden line
+        var hidLineLength = hiddenLine.node().getTotalLength();
+        hiddenLine
+            .attr('stroke-dasharray', hidLineLength + ' ' + hidLineLength)
+            .attr('stroke-dashoffset', hidLineLength)
+            .transition()
+            .duration(400)
+            .delay(400 * k + 400)
+            .ease(d3.easeLinear)
+            .attr('stroke-dashoffset', 0);
+        
+        j++;
+        k++;
+
+        drawPoint(svg,
+                coordinateOfX(xCoord),
+                coordinateOfY(data[i+1]['y']),
+                green, 400 * (k+1));
         xCoord += separation;
     }
-}    
- 
+}
 
-function drawPoint(svg, x, y, color) {
+// determines the X coordinate of a particular x data value
+function coordinateOfX(x) {
+    return innerGraphX + x;
+}
+
+// determines the Y coordinate of a particular y data value
+function coordinateOfY(y) {
+    var ydist = yDistance(y, yHeight, innerGraphHeight);
+    return innerGraphY + innerGraphHeight - ydist;
+}
+
+function drawPoint(svg, x, y, color, delay) {
     var circle = svg.append('circle')
         .attr('cx', x)
         .attr('cy', y)
         .attr('r', 5)
-        .attr('fill', color);
+        .attr('fill', color)
+        .attr('visibility', 'hidden');
+
+    circle.transition()
+        .duration(10)
+        .delay(delay)
+        .ease(d3.easeLinear)
+        .style('visibility', 'visible');
+
+    return circle;
 }
 
