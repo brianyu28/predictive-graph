@@ -104,7 +104,7 @@ function render(error, data) {
         .attr('height', buttonHeight)
         .style('font-family', mainFont)
         .style('font-size', buttonFontSize)
-        .style('color', black)
+        .style('fill', black)
         .style('text-anchor', 'middle')
         .style('visibility', 'hidden')
         .text(function() { return "Show Actual"; })
@@ -279,7 +279,7 @@ function labelAxes(svg, data) {
             .attr('height', padding)
             .style('font-family', mainFont)
             .style('font-size', labelFontSize)
-            .style('color', black)
+            .style('fill', black)
             .style('text-anchor', 'middle')
             .text(function () { return label; });
         disableSelection(xtick);
@@ -296,7 +296,7 @@ function labelAxes(svg, data) {
             .attr('height', padding)
             .style('font-family', mainFont)
             .style('font-size', labelFontSize)
-            .style('color', black)
+            .style('fill', black)
             .style('text-anchor', 'end')
             .text(function() { return height; });
         disableSelection(ytick);
@@ -311,7 +311,7 @@ function labelAxes(svg, data) {
         .attr('font-family', mainFont)
         .attr('transform', 'rotate(-90)')
         .style('font-size', labelFontSize)
-        .style('color', black)
+        .style('fill', black)
         .style('text-anchor', 'middle')
         .text(function() { return yLabel; });
     disableSelection(yaxis);
@@ -324,7 +324,7 @@ function labelAxes(svg, data) {
         .attr('height', padding)
         .attr('font-family', mainFont)
         .style('font-size', labelFontSize)
-        .style('color', black)
+        .style('fill', black)
         .style('text-anchor', 'middle')
         .text(function() { return xLabel; });
     disableSelection(xaxis);
@@ -443,7 +443,7 @@ function showKey(svg) {
         .attr('height', padding)
         .style('font-family', mainFont)
         .style('font-size', labelFontSize)
-        .style('color', black)
+        .style('fill', black)
         .style('text-anchor', 'start')
         .text(function() { return "Your Guess"; });
     disableSelection(guessLabel);
@@ -464,7 +464,7 @@ function showKey(svg) {
         .attr('height', padding)
         .style('font-family', mainFont)
         .style('font-size', labelFontSize)
-        .style('color', black)
+        .style('fill', black)
         .style('text-anchor', 'start')
         .text(function() { return "Actual Data"; });
     disableSelection(actualLabel);
