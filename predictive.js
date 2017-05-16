@@ -111,6 +111,7 @@ function render(error, data) {
         .on('click', function() {
             plotHiddenPoints(svg, [visible[visible.length - 1]].concat(hidden), visible.length);
         });
+    disableSelection(showButtonText);
 
     svg.on('mousemove', mousemove)
         .on('mouseup', mouseup)
@@ -271,7 +272,7 @@ function labelAxes(svg, data) {
     for (var i = 0; i < data.length; i++) {
         var label = data[i]['x'];
     
-        svg.append('text')
+        var xtick = svg.append('text')
             .attr('x', innerGraphX + i * separation)
             .attr('y', innerGraphY + innerGraphHeight + padding)
             .attr('width', separation)
@@ -281,13 +282,14 @@ function labelAxes(svg, data) {
             .style('color', black)
             .style('text-anchor', 'middle')
             .text(function () { return label; });
+        disableSelection(xtick);
     }
     
     // label the y ticks
     for (var i = 0; i < ticks; i++) {
         var height = i * tickInterval;
 
-        svg.append('text')
+        var ytick = svg.append('text')
             .attr('x', innerGraphX - padding)
             .attr('y', innerGraphY + innerGraphHeight - (height / yHeight) * innerGraphHeight)
             .attr('width', separation) 
@@ -297,10 +299,11 @@ function labelAxes(svg, data) {
             .style('color', black)
             .style('text-anchor', 'end')
             .text(function() { return height; });
+        disableSelection(ytick);
     }
 
     // label the y axis
-    svg.append('text')
+    var yaxis = svg.append('text')
         .attr('x', - innerGraphWidth / 2)
         .attr('y', padding)
         .attr('width', innerGraphWidth)
@@ -311,9 +314,10 @@ function labelAxes(svg, data) {
         .style('color', black)
         .style('text-anchor', 'middle')
         .text(function() { return yLabel; });
+    disableSelection(yaxis);
 
     // label the x axis
-    svg.append('text')
+    var xaxis = svg.append('text')
         .attr('x', innerGraphX + innerGraphWidth / 2)
         .attr('y', innerGraphY + innerGraphHeight + 3 * padding)
         .attr('width', innerGraphWidth)
@@ -323,6 +327,7 @@ function labelAxes(svg, data) {
         .style('color', black)
         .style('text-anchor', 'middle')
         .text(function() { return xLabel; });
+    disableSelection(xaxis);
 }
 
 function plotVisiblePoints(svg, data) {
@@ -431,7 +436,7 @@ function showKey(svg) {
         .style('fill', guessColor);
 
     // red box corresponds to your guess
-    svg.append('text')
+    var guessLabel = svg.append('text')
         .attr('x', innerGraphX + 2 * padding)
         .attr('y', innerGraphY + innerGraphHeight + 5 * padding)
         .attr('width', 0.15 * innerGraphWidth)
@@ -441,6 +446,7 @@ function showKey(svg) {
         .style('color', black)
         .style('text-anchor', 'start')
         .text(function() { return "Your Guess"; });
+    disableSelection(guessLabel);
     
     // green box
     svg.append('rect')
@@ -451,7 +457,7 @@ function showKey(svg) {
         .style('fill', correctColor); 
 
     // green box corresponds to actual
-    svg.append('text')
+    var actualLabel = svg.append('text')
         .attr('x', innerGraphX + 6 * padding + 0.15 * innerGraphWidth)
         .attr('y', innerGraphY + innerGraphHeight + 5 * padding)
         .attr('width', 0.15 * innerGraphWidth)
@@ -461,6 +467,7 @@ function showKey(svg) {
         .style('color', black)
         .style('text-anchor', 'start')
         .text(function() { return "Actual Data"; });
+    disableSelection(actualLabel);
         
 }
 
