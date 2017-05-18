@@ -10,4 +10,4 @@ var graphWidth = 0.9 * window.innerWidth;
 var graphHeight = 0.8 * window.innerHeight;
 
 // configuration options
-var useButton = true;
+var useButton = false;

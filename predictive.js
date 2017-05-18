@@ -88,7 +88,7 @@ function render(error, data) {
     // add button to show results
     showButton = svg.append('rect')
         .attr('x', innerGraphX + innerGraphWidth - buttonWidth)
-        .attr('y', innerGraphY + innerGraphHeight + 2 * padding)
+        .attr('y', innerGraphY + innerGraphHeight + 3 * padding)
         .attr('width', buttonWidth)
         .attr('height', buttonHeight)
         .style('fill', showButtonColor)
@@ -99,7 +99,7 @@ function render(error, data) {
     
     showButtonText = svg.append('text')
         .attr('x', innerGraphX + innerGraphWidth - (buttonWidth / 2))
-        .attr('y', innerGraphY + innerGraphHeight + 2 * padding + (buttonWidth / 5))
+        .attr('y', innerGraphY + innerGraphHeight + 3 * padding + (buttonWidth / 5))
         .attr('width', buttonWidth)
         .attr('height', buttonHeight)
         .style('font-family', mainFont)
@@ -274,7 +274,7 @@ function labelAxes(svg, data) {
     
         var xtick = svg.append('text')
             .attr('x', innerGraphX + i * separation)
-            .attr('y', innerGraphY + innerGraphHeight + padding)
+            .attr('y', innerGraphY + innerGraphHeight + 2 * padding)
             .attr('width', separation)
             .attr('height', padding)
             .style('font-family', mainFont)
@@ -319,7 +319,7 @@ function labelAxes(svg, data) {
     // label the x axis
     var xaxis = svg.append('text')
         .attr('x', innerGraphX + innerGraphWidth / 2)
-        .attr('y', innerGraphY + innerGraphHeight + 3 * padding)
+        .attr('y', innerGraphY + innerGraphHeight + 4 * padding)
         .attr('width', innerGraphWidth)
         .attr('height', padding)
         .attr('font-family', mainFont)
@@ -466,7 +466,7 @@ function showKey(svg) {
         .style('font-size', labelFontSize)
         .style('fill', black)
         .style('text-anchor', 'start')
-        .text(function() { return "Actual Data"; });
+        .text(function() { return "Actual"; });
     disableSelection(actualLabel);
         
 }

@@ -2,7 +2,7 @@
 var padding = 10;
 var headlineSize = 32;
 var buttonFontSize = 18;
-var labelFontSize = 10;
+var labelFontSize = 14;
 
 // locations for inner graph
 // inner graph is everything within axes
