@@ -67,6 +67,16 @@ function render(error, data) {
         .style('margin-left', px(padding))
         .style('margin-right', px(padding));
     makeHeadline(headline);
+
+    canvas.append('div')
+        .html('Click and drag to predict the remainder of the line graph.')
+        .style('margin-left', px(padding))
+        .style('margin-right', px(padding))
+        .style('margin-bottom', px(10))
+        .style('color', black)
+        .style('text-align', 'center')
+        .style('font-family', mainFont)
+        .style('font-size', 14);
     
     // calculate space between points
     separation = innerGraphWidth / (data.length - 1);
